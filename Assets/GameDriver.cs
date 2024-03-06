@@ -1,0 +1,177 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.Assertions;
+
+public class GameDriver : MonoBehaviour
+{
+    public Texture2D cursorTexture;
+    public CursorMode cursorMode = CursorMode.Auto;
+    
+    private Camera mainCamera;
+
+    public CardBank startingDeck;
+
+    private GameObject player;
+    private List<GameObject> enemies = new List<GameObject>();
+
+
+    [Header("Managers")]
+    [SerializeField] private CardManager cardManager;
+
+    [SerializeField] private CardDisplayManager cardDisplayManager;
+
+    [SerializeField] private CardDeckManager cardDeckManager;
+
+    [SerializeField] private EffectResolutionManager effectResolutionManager;
+    [SerializeField] private CardSelectionHasArrow cardSelectionHasArrow;
+    [SerializeField] private TurnManager turnManager;
+
+    private List<CardTemplate> _playerDeck = new List<CardTemplate>();
+
+    [Header("Character pivots")]
+    [SerializeField]
+    public Transform playerPivot;
+    [SerializeField]
+    public Transform enemyPivot;
+
+    [Header("UI")]
+    [SerializeField]
+    private Canvas canvas;
+
+    [SerializeField] private DeckWidget deckWidget;
+    [SerializeField] private DiscardPileWidget discardPileWidget;
+
+
+    [SerializeField] private AssetReference enemyTemplate;
+    [SerializeField] private AssetReference playerTemplate;
+
+    [SerializeField] private GameObject playerHpWidget;
+    [SerializeField] private GameObject enemyHpWidget;
+    [SerializeField] private IntVariable enemyHp;
+    [SerializeField] private IntVariable playerHp;
+
+    [SerializeField] private IntVariable enemyShield;
+    [SerializeField] private IntVariable playerShield;
+
+
+    private void Start()
+    {
+        mainCamera = Camera.main;
+        cardManager.Initialize();
+
+        SetCursorTexture();
+
+        CreatePlayer(playerTemplate);
+        CreateEnemy(enemyTemplate);
+    }
+
+    private void SetCursorTexture()
+    {
+        float x, y;
+        x = cursorTexture.width/2.0f;
+        y = cursorTexture.height / 2.0f;
+        Cursor.SetCursor(cursorTexture,hotspot:new Vector2(x,y),cursorMode);
+    }
+
+    private void CreatePlayer(AssetReference playerTemplateReference)
+    {
+        var handle = Addressables.LoadAssetAsync<HeroTemplate>(playerTemplateReference);
+        handle.Completed += operationResult =>
+        {
+            var template = operationResult.Result;
+            player = Instantiate(template.Prefab, playerPivot);
+            Assert.IsNotNull(player);
+
+            playerHp.Value = 20;
+            playerShield.Value = 0;
+
+            CreateHpWidget(playerHpWidget,character:player,hp:playerHp,maxHp:30, shield: playerShield);
+
+            foreach (var item in template.StartingDeck.Items)
+            {
+                for (int i = 0; i < item.Amount; i++)
+                {
+                    _playerDeck.Add(item.Card);
+                }
+            }
+
+            var obj = player.GetComponent<CharacterObject>();
+            obj.Template = template;
+            obj.Character = new RuntimeCharacter()
+            {
+                Hp = playerHp,
+                Shield = playerShield,
+                Mana = 100,
+                MaxHp = 30
+            };
+
+            Initialize();
+        };
+    }
+
+    private void CreateEnemy(AssetReference templateReference)
+    {
+        var handle = Addressables.LoadAssetAsync<EnemyTemplate>(templateReference);
+        handle.Completed += operationResult =>
+        {
+            var pivot = enemyPivot;
+            var template = operationResult.Result;
+            var enemy = Instantiate(template.Prefab, pivot);
+
+            Assert.IsNotNull(enemy);
+
+            enemyHp.Value = 20;
+            enemyShield.Value = 0;
+            CreateHpWidget(enemyHpWidget, character:enemy, hp:enemyHp, maxHp:20, shield:enemyShield);
+
+            var obj = enemy.GetComponent<CharacterObject>();
+            obj.Template = template;
+            obj.Character = new RuntimeCharacter
+            {
+                Hp = enemyHp,
+                Shield = enemyShield,
+                Mana = 100,
+                MaxHp = 20
+            };
+
+            enemies.Add(enemy);
+        };
+    }
+
+    public void Initialize()
+    {
+        cardDeckManager.Initialize(deckWidget,discardPileWidget);
+        cardDeckManager.LoadDeck(_playerDeck);
+        cardDeckManager.ShuffleDeck();
+
+        cardDisplayManager.Initialize(cardManager, deckWidget, discardPileWidget);
+
+        //cardDeckManager.DrawCardsFromDeck(5);
+
+        var playerCharacter = player.GetComponent<CharacterObject>();
+        var enemyCharacters = new List<CharacterObject>(enemies.Count);
+
+        foreach (var enemy in enemies)
+        {
+            enemyCharacters.Add(enemy.GetComponent<CharacterObject>());
+        }
+
+        cardSelectionHasArrow.Initialize(playerCharacter, enemyCharacters);
+        effectResolutionManager.Initialize(playerCharacter, enemyCharacters);
+
+        turnManager.BeginGame();
+    }
+
+    private void CreateHpWidget(GameObject prefab, GameObject character, IntVariable hp, int maxHp, IntVariable shield)
+    {
+        var hpWidget = Instantiate(prefab, canvas.transform, false);
+        var pivot = character.transform;
+        var canvasPosition = mainCamera.WorldToViewportPoint(pivot.position + new Vector3(0.0f, -0.3f, 0.0f));
+        hpWidget.GetComponent<RectTransform>().anchorMin = canvasPosition;
+        hpWidget.GetComponent<RectTransform>().anchorMax = canvasPosition;
+        hpWidget.GetComponent<HpWidget>().Initialize(hp, maxHp, shield);
+    }
+}

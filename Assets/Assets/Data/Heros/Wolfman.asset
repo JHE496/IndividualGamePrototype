@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e89261f1dc33df94c998370834a382e3, type: 3}
+  m_Name: Wolfman
+  m_EditorClassIdentifier: 
+  Name: Wolfman
+  Prefab: {fileID: 9094245467463176565, guid: 2c00b8d9cb384774481c89588c6d82aa, type: 3}
+  StartingDeck: {fileID: 11400000, guid: ab9fbc43b6570064baa1c0ba01f1c75d, type: 2}
