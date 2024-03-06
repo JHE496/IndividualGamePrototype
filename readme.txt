@@ -1,4 +1,4 @@
-Game Execution Method: The GitHub link or "My project.7z" is the complete Unity project file, which can be opened as a project in Unity, while "Individual Game Prototype.zip" is the executable version.
+Game Execution Method: "My project.7z" is the complete Unity project file, which can be opened as a project in Unity, while "Individual Game Prototype.zip" is the executable version. Github Link is similiar to "My project.7z" but the .gitignore for unity block some files. "individual prototype.unitypackage" is exported from Unity.
 
 Prototype Content Introduction: This prototype is primarily developed based on a tutorial from the Unity3D Chinese classroom, available at https://learn.u3d.cn/tutorial/slay-the-spire-like-card-game. It uses a large amount of material and some C# code files provided in this class, and the overall project structure is based on this classroom as well. The main goal of this project is to complete a combat section of a game similar to "Slay the Spire" using Unity, with about 60% of the functionalities currently implemented.
 
